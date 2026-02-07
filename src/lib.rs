@@ -38,9 +38,13 @@ impl Cache {
     }
 
     pub fn write<V: Serialize>(&self, key: &str, value: &V) -> Result<()> {
-        let _ = std::fs::create_dir(&self.base);
-        File::create(self.path_for_key(key))?
-            .write_all(serde_json::to_string(value)?.as_bytes())?;
+        let path = self.path_for_key(key);
+        // no need for if let
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        std::fs::write(path, serde_json::to_vec(value)?)?;
 
         Ok(())
     }
