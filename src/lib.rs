@@ -38,6 +38,7 @@ impl Cache {
     }
 
     pub fn write<V: Serialize>(&self, key: &str, value: &V) -> Result<()> {
+        let _ = std::fs::create_dir(&self.base);
         File::open(self.path_for_key(key))?.write_all(serde_json::to_string(value)?.as_bytes())?;
 
         Ok(())
