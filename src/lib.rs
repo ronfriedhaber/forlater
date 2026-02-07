@@ -1,4 +1,9 @@
-use std::{fs::File, io::Write, path::PathBuf, time::Duration};
+use std::{
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+    time::{Duration, SystemTime},
+};
 
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -21,6 +26,17 @@ impl Cache {
         self.base.join(key).with_extension(".ucache")
     }
 
+    fn expired(&self, path: &Path) -> Result<bool> {
+        let Some(ttl) = self.ttl else {
+            return Ok(false);
+        };
+
+        let modified = std::fs::metadata(path)?.modified()?;
+        let expires_at = modified + ttl;
+
+        Ok(SystemTime::now() > expires_at)
+    }
+
     pub fn write<V: Serialize>(&self, key: &str, value: &V) -> Result<()> {
         File::open(self.path_for_key(key))?.write_all(serde_json::to_string(value)?.as_bytes())?;
 
@@ -28,7 +44,13 @@ impl Cache {
     }
 
     pub fn read<T: DeserializeOwned>(&self, key: &str) -> Result<T> {
-        let data = std::fs::read(self.path_for_key(key))?;
+        let path = self.path_for_key(key);
+        if self.expired(&path)? {
+            let _ = std::fs::remove_file(&path);
+            return Err(error::Error::Expired);
+        }
+
+        let data = std::fs::read(path)?;
         let x: T = serde_json::from_slice(&data)?;
 
         Ok(x)

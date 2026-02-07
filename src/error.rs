@@ -7,4 +7,7 @@ pub enum Error {
 
     #[error("I/O")]
     Io(#[from] std::io::Error),
+
+    #[error("Cache entry expired")]
+    Expired,
 }
