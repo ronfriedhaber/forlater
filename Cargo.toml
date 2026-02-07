@@ -1,0 +1,11 @@
+[package]
+name = "forlater"
+version = "0.1.0"
+license = "AGPL-3.0-only"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+thiserror = "2"
